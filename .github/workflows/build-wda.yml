@@ -1,0 +1,36 @@
+# Build WebDriverAgent .ipa khong can Mac (chay tren GitHub Actions macOS mien phi)
+# Cach dung:
+# 1. Fork repo https://github.com/appium/WebDriverAgent
+# 2. Copy file nay vao .github/workflows/build-wda.yml trong fork
+# 3. Vao tab Actions -> "Build WDA IPA" -> Run workflow
+# 4. Tai artifact "WDA-unsigned-ipa" ve (file WDA.ipa)
+name: Build WDA IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build WebDriverAgentRunner (khong ky)
+        run: |
+          xcodebuild build-for-testing \
+            -project WebDriverAgent.xcodeproj \
+            -scheme WebDriverAgentRunner \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY=""
+
+      - name: Dong goi thanh IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Debug-iphoneos/WebDriverAgentRunner-Runner.app Payload/
+          zip -qry WDA.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WDA-unsigned-ipa
+          path: WDA.ipa
